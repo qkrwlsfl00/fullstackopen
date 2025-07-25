@@ -92,14 +92,15 @@ const App = () => {
   }
 
   const handleDeletePerson = (id) => {
-    if (window.confirm(`Delete ${persons.find(p => p.id === id).name}?`)) {
+    const deletingPerson = persons.find(p => p.id === id)
+    if (window.confirm(`Delete ${deletingPerson.name}?`)) {
       phonebookService
         .del(id)
-        .then(deletedPerson => {
-          console.log('deleted from server', deletedPerson);
+        .then(response => {
+          console.log('deleted from server', deletingPerson);
           setPersons(persons.filter(person => person.id !== id))
           showNoti({
-            message: `deleted ${deletedPerson.name}`,
+            message: `deleted ${deletingPerson.name}`,
             isError: false
           })
         })
