@@ -1,4 +1,6 @@
+require('dotenv').config()
 const express = require('express')
+const Person = require('./models/person')
 const morgan = require('morgan')
 
 const app = express()
@@ -9,66 +11,65 @@ app.use(express.static('dist'))
 app.use(express.json())
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :data'))
 
-let persons = [
-  { 
-    "id": "1",
-    "name": "Arto Hellas", 
-    "number": "040-123456"
-  },
-  { 
-    "id": "2",
-    "name": "Ada Lovelace", 
-    "number": "39-44-5323523"
-  },
-  { 
-    "id": "3",
-    "name": "Dan Abramov", 
-    "number": "12-43-234345"
-  },
-  { 
-    "id": "4",
-    "name": "Mary Poppendieck", 
-    "number": "39-23-6423122"
-  }
-]
-
-
-app.get('/api/persons', (req, res) => {
-  res.send(persons)
+app.get('/api/persons', (req, res, next) => {
+  Person.find({})
+    .then(result => {
+      res.json(result)
+    })
 })
 
-app.get('/api/persons/:id', (req, res) => {
-  const id = req.params.id
-  const person = persons.find(p => p.id === id)
-
-  if(!person) {
-    return res.status(404).end()
-  } else {
-    res.send(person)
-  }
+app.get('/api/persons/:id', (req, res, next) => {
+  Person.findById(req.params.id)
+    .then(person => {
+      if (!person) {
+        res.status(404).end()
+      } else {
+        res.json(person)
+      }
+    })
+    .catch(error => next(error))
 })
 
 app.get('/info', (req, res) => {
   res.send(`
-    <p>Phonebook has info for ${persons.length} people</p>
+    <p>Phonebook has info for ${Person.length} people</p>
     <p>${Date()}</p>
   `)
 })
 
-app.delete('/api/persons/:id', (req, res) => {
-  const id = req.params.id
-
-  persons = persons.filter(p => p.id !== id)
-  res.status(204).end()
+app.delete('/api/persons/:id', (req, res, next) => {
+  Person.findByIdAndDelete(req.params.id)
+    .then(result => {
+      console.log('deleted', result);
+      res.status(204).end()
+    })
+    .catch(error => next(error))
 })
 
-const generateId = () => {
-  return String(Math.floor(Math.random() * 1000000))
-}
+app.put('/api/persons/:id', (req, res, next) => {
+  const { name, number } = req.body
+  
 
-app.post('/api/persons', (req, res) => {
+  Person.findById(req.params.id)
+    .then(person => {
+      if (!person) {
+        return res.status(404).end()
+      }
+
+      person.name = name
+      person.number = number
+
+      return person.save()
+        .then(updatedPerson => {
+          console.log('updated', updatedPerson);
+          res.json(updatedPerson)
+        })
+    })
+    .catch(error => next(error))
+})
+
+app.post('/api/persons', (req, res, next) => {
   const body = req.body
-  //body.id = generateId() << 이러면 req 자체를 바꿈 body가 포인터니까. req 내용을 맘대로 바꾸고있음 side effect임
 
   if (!body.name) { 
     return res.status(400).json({
@@ -78,16 +79,33 @@ app.post('/api/persons', (req, res) => {
     return res.status(400).json({
       error: "number is missing"
     })
-  } else if (persons.find(p => p.name === body.name)) {
-    return res.status(400).json({
-      error: 'name must be unique'
-    })
   }
   
-  const person = { ...body, id: generateId() }
-  persons = persons.concat(person)
-  res.json(person)
+  const person = new Person({
+    name: body.name,
+    number: body.number,
+  })
+
+  person.save()
+    .then(savedPerson => {
+      res.json(savedPerson)
+    })
+    .catch(error => next(error))
 })
+
+const errorHandler = (error, req, res, next) => {
+  console.error(error.message)
+
+  if(error.name === 'CastError') {
+    return res.status(400).send({ error: 'malformatted id' })
+  } else if (error.name === 'ValidationError') {
+    return res.status(400).send({ error: error.message })
+  }
+
+  next(error)
+}
+
+app.use(errorHandler)
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
