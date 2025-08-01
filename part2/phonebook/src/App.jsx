@@ -11,6 +11,7 @@ const App = () => {
   const [newNumber, setNewNumber] = useState('')
   const [searchName, setSearchName] = useState('')
   const [noti, setNoti] = useState(null)
+  const [timeoutID, setTimeoutID] = useState(null)
 
   useEffect(() => {
     console.log("effect");
@@ -25,9 +26,10 @@ const App = () => {
 
   const showNoti = (newNoti) => {
     setNoti(newNoti)
-    setTimeout(() => {
+    clearTimeout(timeoutID)
+    setTimeoutID(setTimeout(() => {
       setNoti(null)
-    }, 3000);
+    }, 3000,))
   }
 
   const addPerson = (event) => {
@@ -53,13 +55,23 @@ const App = () => {
             })
           })
           .catch(error => {
-            setPersons(persons.filter(p => p.id !== oldPerson.id))
-            setNewName('')
-            setNewNumber('')
-            showNoti({
-              message: `Information of ${newName} has already been removed from server`,
-              isError: true
-            })
+            console.log(error);
+            console.log('error updating', oldPerson.name);
+            if (error.status === 404) {
+              setPersons(persons.filter(p => p.id !== oldPerson.id))
+              setNewName('')
+              setNewNumber('')
+              showNoti({
+                message: `Information of ${newName} has already been removed from server`,
+                isError: true
+              })
+            } else {
+              showNoti({
+                message: error.response.data.error,
+                isError: true
+              })
+            }
+        
           })
       }
       return
@@ -75,6 +87,13 @@ const App = () => {
         showNoti({
           message: `Added ${returnedPerson.name}`,
           isError: false
+        })
+      })
+      .catch(error => {
+        console.log('error adding new person', error);
+        showNoti({
+          message: error.response.data.error,
+          isError: true
         })
       })
   }

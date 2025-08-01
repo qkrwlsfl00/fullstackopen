@@ -5,7 +5,7 @@ const morgan = require('morgan')
 
 const app = express()
 
-morgan.token('data', (req, res) => JSON.stringify(req.body) )
+morgan.token('data', (req) => JSON.stringify(req.body) )
 
 app.use(express.static('dist'))
 app.use(express.json())
@@ -16,6 +16,7 @@ app.get('/api/persons', (req, res, next) => {
     .then(result => {
       res.json(result)
     })
+    .catch(error => next(error))
 })
 
 app.get('/api/persons/:id', (req, res, next) => {
@@ -40,7 +41,7 @@ app.get('/info', (req, res) => {
 app.delete('/api/persons/:id', (req, res, next) => {
   Person.findByIdAndDelete(req.params.id)
     .then(result => {
-      console.log('deleted', result);
+      console.log('deleted', result)
       res.status(204).end()
     })
     .catch(error => next(error))
@@ -48,7 +49,6 @@ app.delete('/api/persons/:id', (req, res, next) => {
 
 app.put('/api/persons/:id', (req, res, next) => {
   const { name, number } = req.body
-  
 
   Person.findById(req.params.id)
     .then(person => {
@@ -61,7 +61,7 @@ app.put('/api/persons/:id', (req, res, next) => {
 
       return person.save()
         .then(updatedPerson => {
-          console.log('updated', updatedPerson);
+          console.log('updated', updatedPerson)
           res.json(updatedPerson)
         })
     })
@@ -71,16 +71,16 @@ app.put('/api/persons/:id', (req, res, next) => {
 app.post('/api/persons', (req, res, next) => {
   const body = req.body
 
-  if (!body.name) { 
+  if (!body.name) {
     return res.status(400).json({
-      error: "name is missing"
+      error: 'name is missing'
     })
   } else if (!body.number) {
     return res.status(400).json({
-      error: "number is missing"
+      error: 'number is missing'
     })
   }
-  
+
   const person = new Person({
     name: body.name,
     number: body.number,
@@ -109,5 +109,5 @@ app.use(errorHandler)
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
-  console.log(`server running on port ${PORT}`);
+  console.log(`server running on port ${PORT}`)
 })
