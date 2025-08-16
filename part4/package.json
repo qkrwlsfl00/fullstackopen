@@ -1,0 +1,23 @@
+{
+  "name": "bloglist",
+  "version": "0.0.1",
+  "main": "index.js",
+  "scripts": {
+    "dev": "cross-env NODE_ENV=development node --watch index.js",
+    "test": "cross-env NODE_ENV=test node --test"
+  },
+  "author": "Jinri Park",
+  "license": "MIT",
+  "description": "",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cross-env": "^10.0.0",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.17.0"
+  },
+  "devDependencies": {
+    "supertest": "^7.1.4"
+  }
+}
