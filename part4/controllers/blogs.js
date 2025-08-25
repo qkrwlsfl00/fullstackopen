@@ -5,7 +5,7 @@ const User = require('../models/user')
 const { userExtractor } = require('../utils/middleware')
 
 blogsRouter.get('/', async (request, response) => {
-  const blogs = await Blog.find({}).populate('user', '-blogs')  //populate는 promise 안 기다리고 바로 붙임
+  const blogs = await Blog.find({}).populate('user', 'username name')  //populate는 promise 안 기다리고 바로 붙임
   response.json(blogs)
 })
 
@@ -22,7 +22,8 @@ blogsRouter.post('/', userExtractor, async (request, response) => {
   user.blogs = user.blogs.concat(savedBlog)
   await user.save()
 
-  response.status(201).json(savedBlog)
+  const populatedBlog = await savedBlog.populate('user', 'username name')
+  response.status(201).json(populatedBlog)
 })
 
 blogsRouter.delete('/:id', userExtractor, async (request, response) => {
@@ -52,7 +53,8 @@ blogsRouter.put('/:id', async (request, response) => {
   blogToUpdate.likes = request.body.likes
 
   const updatedBlog = await blogToUpdate.save()
-  response.json(updatedBlog)
+  const populatedBlog = await updatedBlog.populate('user', 'username name')
+  response.json(populatedBlog)
 })
 
 module.exports = blogsRouter
